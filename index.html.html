@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FAB Regulatory Reporting Platform Prototype</title>
+  <style>
+    :root{
+      --bg:#06111f;
+      --bg2:#091a30;
+      --panel:#0b1728;
+      --panel2:#0e1c31;
+      --line:#21324d;
+      --text:#e8eef8;
+      --muted:#9fb0c9;
+      --green:#1ecb8b;
+      --amber:#ffb547;
+      --slate:#71839c;
+      --white:#ffffff;
+      --danger:#ff7d7d;
+      --shadow:0 12px 30px rgba(0,0,0,.28);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--text);
+      background: radial-gradient(circle at top, #143764 0%, #091425 34%, #040912 100%);
+    }
+    a{color:inherit}
+    .app{
+      display:grid;
+      grid-template-columns:280px 1fr;
+      min-height:100vh;
+    }
+    .sidebar{
+      border-right:1px solid var(--line);
+      background:rgba(5,12,22,.78);
+      backdrop-filter: blur(10px);
+      padding:20px;
+      position:sticky; top:0; height:100vh; overflow:auto;
+    }
+    .brand h1{margin:0;font-size:22px}
+    .brand p{margin:6px 0 0;color:var(--muted);font-size:12px}
+    .card{
+      background:rgba(8,18,31,.78);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+    .role-box{padding:14px;margin-top:18px}
+    .role-box .hint{font-size:12px;color:var(--muted);line-height:1.5;margin-top:10px}
+    .nav{margin-top:18px;display:flex;flex-direction:column;gap:8px}
+    .nav button{
+      background:transparent;border:none;color:#c7d2e7;text-align:left;padding:14px 14px;
+      border-radius:16px;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:10px;
+    }
+    .nav button:hover{background:rgba(18,31,51,.7)}
+    .nav button.active{background:#f2f5fb;color:#0f1725;font-weight:600}
+    .main{padding:24px}
+    .hero{overflow:hidden}
+    .hero-top{
+      padding:24px;border-bottom:1px solid var(--line);
+      display:flex;justify-content:space-between;gap:14px;align-items:flex-start;
+      background:linear-gradient(90deg, rgba(8,18,31,.95), rgba(9,24,46,.78));
+    }
+    .hero h2{margin:0;font-size:34px;line-height:1.15}
+    .hero .sub{margin-top:8px;color:var(--muted);font-size:14px}
+    .mini{text-transform:uppercase;letter-spacing:.2em;font-size:11px;color:var(--muted);text-align:right}
+    .mini strong{display:block;margin-top:8px;font-size:14px;color:var(--text);text-transform:none;letter-spacing:normal}
+    .stats{
+      padding:18px;display:grid;grid-template-columns:repeat(6,1fr);gap:14px;
+    }
+    .stat{
+      background:rgba(9,18,31,.88);border:1px solid var(--line);border-radius:18px;padding:16px;min-height:96px;
+      display:flex;justify-content:space-between;gap:12px;
+    }
+    .stat .n{font-size:28px;font-weight:700}
+    .stat .t{margin-top:4px;font-size:13px;color:#d7e0ee}
+    .stat .s{margin-top:4px;font-size:11px;color:var(--muted)}
+    .filters{padding:14px 16px;margin-top:16px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+    .left-filters{display:flex;gap:12px;flex-wrap:wrap}
+    input, select, textarea{
+      background:#091421;border:1px solid var(--line);border-radius:12px;color:var(--text);
+      padding:11px 12px;font:inherit;outline:none;
+    }
+    textarea{width:100%;min-height:96px;resize:vertical}
+    .search{min-width:320px}
+    .muted{color:var(--muted)}
+    .screen{display:none;margin-top:18px}
+    .screen.active{display:block}
+    .section-head{
+      display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap
+    }
+    .section-head h3{margin:0;font-size:24px}
+    .section-head p{margin:6px 0 0;color:var(--muted);font-size:14px}
+    .btn{
+      background:#eef3fb;color:#0d1521;border:none;border-radius:14px;padding:11px 14px;font-weight:600;cursor:pointer
+    }
+    .btn.secondary{background:transparent;color:var(--text);border:1px solid var(--line)}
+    .btn.danger{background:#3a1010;color:#ffd3d3;border:1px solid #6a2b2b}
+    .badge{
+      display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);font-size:12px
+    }
+    .applicable{background:rgba(30,203,139,.16);color:#9af0cf;border-color:rgba(30,203,139,.3)}
+    .conditional,.pending,.expiring,.open,.high,.under-review{background:rgba(255,181,71,.15);color:#ffd28a;border-color:rgba(255,181,71,.3)}
+    .na,.draft,.medium{background:rgba(113,131,156,.15);color:#d0d7e2;border-color:rgba(113,131,156,.3)}
+    .approved,.active,.closed{background:rgba(30,203,139,.16);color:#9af0cf;border-color:rgba(30,203,139,.3)}
+    .grid-3{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+    .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+    .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:13px 12px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:top}
+    th{color:#bdd0ea;font-weight:600;text-align:left;background:rgba(255,255,255,.02)}
+    tr:hover td{background:rgba(255,255,255,.015)}
+    .table-wrap{overflow:auto;border-radius:18px;border:1px solid var(--line)}
+    .entity-name{font-weight:600}
+    .entity-sub{font-size:12px;color:var(--muted);margin-top:4px}
+    .heat-btn{background:none;border:none;cursor:pointer}
+    .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .small-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .item-card{padding:18px}
+    .item-card h4{margin:0 0 6px;font-size:18px}
+    .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .chip{background:#111f34;border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-size:12px}
+    .stack{display:flex;flex-direction:column;gap:16px}
+    .detail-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    .kv{padding:14px}
+    .kv .k{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+    .kv .v{margin-top:8px;font-size:14px}
+    .detail-lower{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+    .panel{padding:18px}
+    .panel h4{margin:0 0 10px;font-size:18px}
+    .panel .label{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-top:14px}
+    .panel .text{font-size:14px;line-height:1.65;margin-top:8px;color:#dce6f4}
+    .empty-note{padding:34px;text-align:center;color:var(--muted)}
+    .dropzone{
+      border:1px dashed #40516f;background:rgba(17,31,52,.4);border-radius:18px;padding:34px;text-align:center
+    }
+    .dropzone h4{margin:10px 0 6px}
+    .modal-backdrop{
+      position:fixed;inset:0;background:rgba(3,8,15,.72);display:none;align-items:center;justify-content:center;padding:20px;z-index:50
+    }
+    .modal-backdrop.show{display:flex}
+    .modal{width:min(760px,100%);max-height:90vh;overflow:auto;padding:18px}
+    .modal h3{margin:0 0 14px}
+    .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .form-grid .full{grid-column:1 / -1}
+    .footer-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
+    .screen-note{font-size:12px;color:var(--muted)}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap}
+    .subtle{font-size:12px;color:var(--muted)}
+    @media (max-width: 1200px){
+      .stats{grid-template-columns:repeat(3,1fr)}
+      .cards,.small-cards,.detail-grid,.grid-2,.detail-lower{grid-template-columns:1fr}
+      .grid-3{grid-template-columns:1fr}
+    }
+    @media (max-width: 880px){
+      .app{grid-template-columns:1fr}
+      .sidebar{position:relative;height:auto}
+      .stats{grid-template-columns:repeat(2,1fr)}
+      .search{min-width:220px}
+    }
+    @media (max-width: 560px){
+      .stats{grid-template-columns:1fr}
+      .form-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>FAB Regulatory Platform</h1>
+      <p>Clickable HTML prototype · review + edit flows</p>
+    </div>
+
+    <div class="card role-box">
+      <div class="subtle">ROLE VIEW</div>
+      <div style="margin-top:10px">
+        <select id="roleSelect" style="width:100%">
+          <option>CXO Viewer</option>
+          <option>Compliance Editor</option>
+          <option>Approver</option>
+          <option>Admin</option>
+        </select>
+      </div>
+      <div class="hint">
+        <strong>How to view:</strong> use the left menu.<br>
+        <strong>How to edit:</strong> switch to Compliance Editor, Approver, or Admin and use the buttons inside each screen.
+      </div>
+    </div>
+
+    <div class="nav" id="nav"></div>
+  </aside>
+
+  <main class="main">
+    <section class="card hero">
+      <div class="hero-top">
+        <div>
+          <h2>Global Markets Regulatory Reporting Platform</h2>
+          <div class="sub">Single source of truth for applicability, field mapping, exemptions, decisions, approvals, and admin controls</div>
+        </div>
+        <div class="mini">Active role<strong id="activeRole">CXO Viewer</strong></div>
+      </div>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <section class="card filters">
+      <div class="left-filters">
+        <input id="searchInput" class="search" placeholder="Search products, entities, regimes, fields">
+        <select id="entityFilter"></select>
+        <select id="regimeFilter"></select>
+      </div>
+      <div class="screen-note">Cross-screen filters for review and maintenance</div>
+    </section>
+
+    <section id="screen-dashboard" class="screen active"></section>
+    <section id="screen-heatmap" class="screen"></section>
+    <section id="screen-detail" class="screen"></section>
+    <section id="screen-fields" class="screen"></section>
+    <section id="screen-exemptions" class="screen"></section>
+    <section id="screen-decisions" class="screen"></section>
+    <section id="screen-approvals" class="screen"></section>
+    <section id="screen-admin" class="screen"></section>
+    <section id="screen-upload" class="screen"></section>
+  </main>
+</div>
+
+<div id="modalBackdrop" class="modal-backdrop">
+  <div class="card modal" id="modalBox"></div>
+</div>
+
+<script>
+const roles = ["CXO Viewer","Compliance Editor","Approver","Admin"];
+const nav = [
+  ["dashboard","Executive Dashboard"],
+  ["heatmap","Entity Heatmap"],
+  ["detail","Applicability Detail"],
+  ["fields","Instrument Field Explorer"],
+  ["exemptions","Exemptions Tracker"],
+  ["decisions","Decision Log"],
+  ["approvals","Pending Approvals"],
+  ["admin","Reference Data Admin"],
+  ["upload","Bulk Upload"]
+];
+
+const regimes = ["CFTC","EMIR Refit","UK EMIR","MiFIR (EU)","UK MiFIR","SFTR (EU)","UK SFTR","MAS OTC","HKMA OTC","SAMA"];
+
+const entities = [
+  { id: 1, name: "Abu Dhabi Head Office", location: "Abu Dhabi", type: "Head Office", regulator: "CBUAE", jurisdiction: "UAE" },
+  { id: 2, name: "ADGM Branch", location: "Abu Dhabi", type: "Branch", regulator: "FSRA", jurisdiction: "UAE" },
+  { id: 3, name: "Paris Subsidiary", location: "Paris", type: "Subsidiary", regulator: "ACPR / AMF", jurisdiction: "France" },
+  { id: 4, name: "London Branch", location: "London", type: "Branch", regulator: "PRA / FCA", jurisdiction: "United Kingdom" },
+  { id: 5, name: "Saudi Operations", location: "Riyadh", type: "Branch", regulator: "SAMA / CMA", jurisdiction: "Saudi Arabia" },
+  { id: 6, name: "FABMISR", location: "Cairo", type: "Subsidiary", regulator: "CBE / FRA", jurisdiction: "Egypt" },
+  { id: 7, name: "Singapore Branch", location: "Singapore", type: "Branch", regulator: "MAS", jurisdiction: "Singapore" },
+  { id: 8, name: "Hong Kong Branch", location: "Hong Kong", type: "Branch", regulator: "HKMA / SFC", jurisdiction: "Hong Kong" },
+  { id: 9, name: "India Branch", location: "Mumbai", type: "Branch", regulator: "RBI / SEBI", jurisdiction: "India" },
+  { id: 10, name: "FAB Private Bank Suisse", location: "Switzerland", type: "Subsidiary", regulator: "FINMA", jurisdiction: "Switzerland" },
+  { id: 11, name: "FAB USA N.V.", location: "New York", type: "Branch", regulator: "NYDFS / CFTC", jurisdiction: "United States" },
+  { id: 12, name: "Malaysia Rep Office", location: "Kuala Lumpur", type: "Representative Office", regulator: "BNM", jurisdiction: "Malaysia" },
+  { id: 13, name: "China Branch Shanghai", location: "Shanghai", type: "Branch", regulator: "PBOC / CBIRC", jurisdiction: "China" },
+  { id: 14, name: "Bahrain Branch", location: "Bahrain", type: "Branch", regulator: "CBB", jurisdiction: "Bahrain" }
+];
+
+const heatmap = {
+  1: { "CFTC": "Conditional", "EMIR Refit": "Conditional", "UK EMIR": "Conditional", "MiFIR (EU)": "Not Applicable", "UK MiFIR": "Not Applicable", "SFTR (EU)": "Conditional", "UK SFTR": "Conditional", "MAS OTC": "Not Applicable", "HKMA OTC": "Not Applicable", "SAMA": "Not Applicable" },
+  2: { "CFTC": "Conditional", "EMIR Refit": "Not Applicable", "UK EMIR": "Not Applicable", "MiFIR (EU)": "Not Applicable", "UK MiFIR": "Not Applicable", "SFTR (EU)": "Not Applicable", "UK SFTR": "Not Applicable", "MAS OTC": "Not Applicable", "HKMA OTC": "Not Applicable", "SAMA": "Not Applicable" },
+  3: { "CFTC": "Conditional", "EMIR Refit": "Applicable", "UK EMIR": "Not Applicable", "MiFIR (EU)": "Applicable", "UK MiFIR": "Not Applicable", "SFTR (EU)": "Applicable", "UK SFTR": "Not Applicable", "MAS OTC": "Not Applicable", "HKMA OTC": "Not Applicable", "SAMA": "Not Applicable" },
+  4: { "CFTC": "Conditional", "EMIR Refit": "Not Applicable", "UK EMIR": "Applicable", "MiFIR (EU)": "Not Applicable", "UK MiFIR": "Applicable", "SFTR (EU)": "Not Applicable", "UK SFTR": "Applicable", "MAS OTC": "Not Applicable", "HKMA OTC": "Not Applicable", "SAMA": "Not Applicable" },
+  5: { "CFTC": "Not Applicable", "EMIR Refit": "Not Applicable", "UK EMIR": "Not Applicable", "MiFIR (EU)": "Not Applicable", "UK MiFIR": "Not Applicable", "SFTR (EU)": "Not Applicable", "UK SFTR": "Not Applicable", "MAS OTC": "Not Applicable", "HKMA OTC": "Not Applicable", "SAMA": "Applicable" },
+  6: { "CFTC": "Not Applicable", "EMIR Refit": "Not Applicable", "UK EMIR": "Not Applicable", "MiFIR (EU)": "Not Applicable", "UK MiFIR": "Not Applicable", "SFTR (EU)": "Not Applicable", "UK SFTR": "Not Applicable", "MAS OTC": "Not Applicable", "HKMA OTC": "Not Applicable", "SAMA": "Not Applicable" },
+  7: { "CFTC": "Conditional", "EMIR Refit": "Not Applicable", "UK EMIR": "Not Applicable", "MiFIR (EU)": "Not Applicable", "UK MiFIR": "Not Applicable", "SFTR (EU)": "Not Applicable", "UK SFTR": "Not Applicable", "MAS OTC": "Applicable", "HKMA OTC": "Not Applicable", "SAMA": "Not Applicable" },
+  8: { "CFTC": "Conditional", "EMIR Refit": "Not Applicable", "UK EMIR": "Not Applicable", "MiFIR (EU)": "Not Applicable", "UK MiFIR": "Not Applicable", "SFTR (EU)": "Not Applicable", "UK SFTR": "Not Applicable", "MAS OTC": "Not Applicable", "HKMA OTC": "Applicable", "SAMA": "Not Applicable" },
+  9: { "CFTC": "Not Applicable", "EMIR Refit": "Not Applicable", "UK EMIR": "Not Applicable", "MiFIR (EU)": "Not Applicable", "UK MiFIR": "Not Applicable", "SFTR (EU)": "Not Applicable", "UK SFTR": "Not Applicable", "MAS OTC": "Not Applicable", "HKMA OTC": "Not Applicable", "SAMA": "Not Applicable" },
+  10: { "CFTC": "Not Applicable", "EMIR Refit": "Conditional", "UK EMIR": "Not Applicable", "MiFIR (EU)": "Conditional", "UK MiFIR": "Not Applicable", "SFTR (EU)": "Conditional", "UK SFTR": "Not Applicable", "MAS OTC": "Not Applicable", "HKMA OTC": "Not Applicable", "SAMA": "Not Applicable" },
+  11: { "CFTC": "Applicable", "EMIR Refit": "Not Applicable", "UK EMIR": "Not Applicable", "MiFIR (EU)": "Not Applicable", "UK MiFIR": "Not Applicable", "SFTR (EU)": "Not Applicable", "UK SFTR": "Not Applicable", "MAS OTC": "Not Applicable", "HKMA OTC": "Not Applicable", "SAMA": "Not Applicable" },
+  12: { "CFTC": "Not Applicable", "EMIR Refit": "Not Applicable", "UK EMIR": "Not Applicable", "MiFIR (EU)": "Not Applicable", "UK MiFIR": "Not Applicable", "SFTR (EU)": "Not Applicable", "UK SFTR": "Not Applicable", "MAS OTC": "Not Applicable", "HKMA OTC": "Not Applicable", "SAMA": "Not Applicable" },
+  13: { "CFTC": "Not Applicable", "EMIR Refit": "Not Applicable", "UK EMIR": "Not Applicable", "MiFIR (EU)": "Not Applicable", "UK MiFIR": "Not Applicable", "SFTR (EU)": "Not Applicable", "UK SFTR": "Not Applicable", "MAS OTC": "Not Applicable", "HKMA OTC": "Not Applicable", "SAMA": "Not Applicable" },
+  14: { "CFTC": "Not Applicable", "EMIR Refit": "Not Applicable", "UK EMIR": "Not Applicable", "MiFIR (EU)": "Not Applicable", "UK MiFIR": "Not Applicable", "SFTR (EU)": "Not Applicable", "UK SFTR": "Not Applicable", "MAS OTC": "Not Applicable", "HKMA OTC": "Not Applicable", "SAMA": "Not Applicable" }
+};
+
+let products = [
+  { id: 1, product: "FX Linear", entity: "Abu Dhabi Head Office", regime: "CFTC", rule: "Conditional", requiredFields: ["UTI","Counterparty LEI","Execution Timestamp","Product Type","Settlement Date"], rationale: "Triggers where trades face US persons or fall within cross-border reporting conditions.", reviewStatus: "Approved" },
+  { id: 2, product: "Rates", entity: "Paris Subsidiary", regime: "EMIR Refit", rule: "Applicable", requiredFields: ["UTI","UPI","Clearing Obligation","Execution Venue","Maturity Date","Collateralisation"], rationale: "EU subsidiary booking OTC derivatives within EMIR scope.", reviewStatus: "Approved" },
+  { id: 3, product: "Repo / SFT", entity: "London Branch", regime: "UK SFTR", rule: "Applicable", requiredFields: ["Master Agreement Type","Collateral Type","Haircut","Reuse Indicator","Termination Date"], rationale: "UK branch securities financing transactions fall within UK SFTR reporting perimeter.", reviewStatus: "Approved" },
+  { id: 4, product: "Credit / CDS", entity: "Singapore Branch", regime: "MAS OTC", rule: "Applicable", requiredFields: ["Counterparty Identifier","Asset Class","Trade Date","Notional Amount","Maturity Date"], rationale: "MAS OTC reporting applicable to Singapore branch derivatives activity.", reviewStatus: "Approved" },
+  { id: 5, product: "Equity Derivatives", entity: "Hong Kong Branch", regime: "HKMA OTC", rule: "Applicable", requiredFields: ["Transaction Reference","Product Category","Execution Date","Counterparty","Underlying Identifier"], rationale: "HK branch booking in-scope derivatives with local reporting obligations.", reviewStatus: "Approved" },
+  { id: 6, product: "Structured Finance", entity: "Saudi Operations", regime: "SAMA", rule: "Applicable", requiredFields: ["Client Classification","Instrument Type","Approval Reference","Booking Entity","Disclosure Status"], rationale: "Internal reference mapping for KSA reporting and supervisory governance.", reviewStatus: "Draft" },
+  { id: 7, product: "Commodities", entity: "Abu Dhabi Head Office", regime: "EMIR Refit", rule: "Conditional", requiredFields: ["Counterparty Country","Commodity Class","Trade Date","Valuation","Collateral"], rationale: "Applies where EU-facing counterparties or booking patterns trigger EMIR conditions.", reviewStatus: "Under Review" }
+];
+
+let exemptions = [
+  { id: 1, entity: "Abu Dhabi Head Office", regime: "CFTC", exemption: "End-user exception", lawReference: "CFTC 17 CFR Part 50", owner: "Sarah Al-Mansouri", expiry: "2026-09-30", status: "Active", notes: "Applies where hedging criteria are evidenced and approved.", approvalStatus: "Approved" },
+  { id: 2, entity: "Paris Subsidiary", regime: "EMIR Refit", exemption: "Intragroup reporting relief", lawReference: "EMIR Art. 9", owner: "James Whitfield", expiry: "2026-06-15", status: "Expiring", notes: "Annual validation required.", approvalStatus: "Approved" },
+  { id: 3, entity: "London Branch", regime: "UK SFTR", exemption: "Limited transitional treatment", lawReference: "UK SFTR RTS", owner: "Priya Nair", expiry: "2026-05-10", status: "Expiring", notes: "Requires legal confirmation on continuation.", approvalStatus: "Under Review" },
+  { id: 4, entity: "Singapore Branch", regime: "MAS OTC", exemption: "Threshold-based exclusion", lawReference: "MAS OTC Rules", owner: "Ahmed Al-Rashidi", expiry: "2026-12-31", status: "Active", notes: "Monitor monthly threshold usage.", approvalStatus: "Approved" }
+];
+
+let decisions = [
+  { id: 1, date: "2026-02-12", entity: "Abu Dhabi Head Office", regime: "CFTC", question: "Should cross-border trades with US persons be classified as conditional rather than directly applicable?", outcome: "Approved", owner: "Sarah Al-Mansouri", rationale: "Retained as Conditional because applicability depends on counterparty and execution facts.", status: "Closed" },
+  { id: 2, date: "2026-02-18", entity: "Paris Subsidiary", regime: "EMIR Refit", question: "Should MiFIR and EMIR mappings be maintained independently for EU branch activities?", outcome: "Approved", owner: "James Whitfield", rationale: "Yes. Transaction reporting and derivative reporting are separate obligations and must remain distinct.", status: "Closed" },
+  { id: 3, date: "2026-02-20", entity: "Saudi Operations", regime: "SAMA", question: "Should local product governance fields be captured in the platform even where reporting is not transaction-level?", outcome: "Open", owner: "Ahmed Al-Rashidi", rationale: "Pending compliance sign-off on data dictionary.", status: "Open" }
+];
+
+let approvals = [
+  { id: 101, itemType: "Applicability Change", submittedBy: "Priya Nair", submissionDate: "2026-02-22", entity: "London Branch", regime: "UK SFTR", summary: "Change rationale and review date for UK SFTR applicability.", priority: "High", status: "Pending" },
+  { id: 102, itemType: "Exemption Renewal", submittedBy: "James Whitfield", submissionDate: "2026-02-23", entity: "Paris Subsidiary", regime: "EMIR Refit", summary: "Renew intragroup reporting relief and attach annual validation evidence.", priority: "High", status: "Pending" },
+  { id: 103, itemType: "Field Mapping Change", submittedBy: "Ahmed Al-Rashidi", submissionDate: "2026-02-24", entity: "Saudi Operations", regime: "SAMA", summary: "Add product governance fields for structured finance workflow.", priority: "Medium", status: "Pending" }
+];
+
+const referenceData = {
+  users: [
+    { name: "Sarah Al-Mansouri", role: "Compliance Editor" },
+    { name: "James Whitfield", role: "Approver" },
+    { name: "Priya Nair", role: "Compliance Editor" },
+    { name: "Ahmed Al-Rashidi", role: "Admin" }
+  ],
+  products: ["FX Linear","Rates","Credit / CDS","Equity Derivatives","Commodities","Repo / SFT","Structured Finance"]
+};
+
+let currentRole = "CXO Viewer";
+let currentScreen = "dashboard";
+let selectedDetail = {
+  entity: "Paris Subsidiary",
+  jurisdiction: "France",
+  regulator: "ACPR / AMF",
+  regime: "EMIR Refit",
+  status: "Applicable",
+  rationale: "EU subsidiary books in-scope OTC derivative activity and is subject to direct reporting obligations under EMIR Refit.",
+  triggerConditions: "Applies to in-scope derivatives booked through the French subsidiary; review where cross-border delegation applies.",
+  owner: "James Whitfield",
+  reviewer: "Group Compliance Governance",
+  reviewDate: "2026-02-25",
+  nextReviewDate: "2026-06-30",
+  source: "Internal legal-entity mapping and regulatory interpretation note.",
+  approvalStatus: "Approved",
+  linkedExemptions: "Intragroup reporting relief",
+  linkedDecision: "Decision #2"
+};
+
+function canEdit(){ return ["Compliance Editor","Approver","Admin"].includes(currentRole); }
+function canApprove(){ return ["Approver","Admin"].includes(currentRole); }
+function isAdmin(){ return currentRole === "Admin"; }
+
+function cls(v){
+  const x = String(v||"").toLowerCase().replace(/\s+/g,'-');
+  if(["applicable","active","approved","closed"].includes(x)) return "applicable";
+  if(["conditional","expiring","open","pending","high","under-review"].includes(x)) return "conditional";
+  if(["not-applicable","draft","medium"].includes(x)) return "na";
+  return "na";
+}
+function badge(v){
+  const txt = v === "Not Applicable" ? "–" : v;
+  return `<span class="badge ${cls(v)}">${txt}</span>`;
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function counts(){
+  const all = Object.values(heatmap).flatMap(r => Object.values(r));
+  return {
+    applicable: all.filter(v => v==="Applicable").length,
+    conditional: all.filter(v => v==="Conditional").length,
+    expiring: exemptions.filter(e => e.status === "Expiring").length,
+    open: decisions.filter(d => d.status === "Open").length,
+    approvals: approvals.filter(a => a.status === "Pending").length
+  };
+}
+
+function getSearch(){ return document.getElementById('searchInput').value.trim().toLowerCase(); }
+function getEntityFilter(){ return document.getElementById('entityFilter').value; }
+function getRegimeFilter(){ return document.getElementById('regimeFilter').value; }
+
+function filteredProducts(){
+  const q = getSearch();
+  const ef = getEntityFilter();
+  const rf = getRegimeFilter();
+  return products.filter(p => {
+    const s = [p.product,p.entity,p.regime,p.rule,p.rationale].concat(p.requiredFields).join(' ').toLowerCase();
+    return (!q || s.includes(q)) && (ef==="all" || p.entity===ef) && (rf==="all" || p.regime===rf);
+  });
+}
+function filteredExemptions(){
+  const ef = getEntityFilter(), rf = getRegimeFilter(), q = getSearch();
+  return exemptions.filter(e => {
+    const s = [e.entity,e.regime,e.exemption,e.lawReference,e.owner,e.notes].join(' ').toLowerCase();
+    return (!q || s.includes(q)) && (ef==="all" || e.entity===ef) && (rf==="all" || e.regime===rf);
+  });
+}
+function filteredDecisions(){
+  const ef = getEntityFilter(), rf = getRegimeFilter(), q = getSearch();
+  return decisions.filter(d => {
+    const s = [d.entity,d.regime,d.question,d.outcome,d.owner,d.rationale].join(' ').toLowerCase();
+    return (!q || s.includes(q)) && (ef==="all" || d.entity===ef) && (rf==="all" || d.regime===rf);
+  });
+}
+
+function setScreen(key){
+  currentScreen = key;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`screen-${key}`).classList.add('active');
+  document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('active', b.dataset.key===key));
+  renderScreens();
+}
+
+function setRole(role){
+  currentRole = role;
+  document.getElementById('activeRole').textContent = role;
+  renderScreens();
+}
+
+function openHeatmapDetail(entity, regime, status){
+  selectedDetail = {
+    entity: entity.name,
+    jurisdiction: entity.jurisdiction,
+    regulator: entity.regulator,
+    regime,
+    status,
+    rationale: status === "Applicable"
+      ? "This entity is directly mapped in-scope for the selected regime based on booking footprint and local regulatory perimeter."
+      : status === "Conditional"
+        ? "Applicability depends on booking model, counterparty location, product type, or execution facts."
+        : "No direct applicability is currently mapped for this entity-regime pair.",
+    triggerConditions: status === "Conditional"
+      ? "Cross-border activity, delegated reporting structure, execution venue, or product scope may trigger obligations."
+      : "No additional trigger conditions recorded.",
+    owner: "Compliance Governance",
+    reviewer: "Regulatory Reporting Lead",
+    reviewDate: "2026-02-25",
+    nextReviewDate: "2026-06-30",
+    source: "Internal legal-entity inventory and regime applicability note.",
+    approvalStatus: status === "Not Applicable" ? "Approved" : "Under Review",
+    linkedExemptions: status === "Applicable" ? "Relevant exemptions linked where applicable" : "None linked",
+    linkedDecision: "Decision log available for interpretation history"
+  };
+  setScreen('detail');
+}
+
+function renderStats(){
+  const c = counts();
+  const stats = [
+    [`${regimes.length}`,"Regimes",""],
+    [`${entities.length}`,"Entities",""],
+    [`${c.applicable} / ${c.conditional}`,"Applicable / Conditional","Mapped outcomes"],
+    [`${c.expiring}`,"Exemptions Expiring",""],
+    [`${c.open}`,"Open Decisions",""],
+    [`${c.approvals}`,"Pending Approvals",""]
+  ];
+  document.getElementById('stats').innerHTML = stats.map(([n,t,s]) => `
+    <div class="stat">
+      <div><div class="n">${n}</div><div class="t">${t}</div>${s?`<div class="s">${s}</div>`:''}</div>
+      <div class="subtle">●</div>
+    </div>`).join('');
+}
+
+function renderNav(){
+  const navEl = document.getElementById('nav');
+  navEl.innerHTML = nav.map(([key,label]) => `<button data-key="${key}" class="${currentScreen===key?'active':''}">${label}</button>`).join('');
+  navEl.querySelectorAll('button').forEach(btn => btn.onclick = ()=>setScreen(btn.dataset.key));
+}
+
+function screenShell(title, desc, action=''){
+  return `<div class="section-head"><div><h3>${title}</h3><p>${desc}</p></div>${action}</div>`;
+}
+
+function renderDashboard(){
+  const c = counts();
+  const openCards = filteredDecisions().filter(d=>d.status==="Open").map(d => `
+    <div class="card panel">
+      <div style="font-size:14px">${escapeHtml(d.question)}</div>
+      <div class="subtle" style="margin-top:6px">${escapeHtml(d.entity)} · ${escapeHtml(d.regime)}</div>
+    </div>`).join('') || `<div class="card panel"><div class="subtle">No open decisions for current filters.</div></div>`;
+  const expCards = filteredExemptions().filter(e=>e.status==="Expiring").map(e => `
+    <div class="card panel" style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <div><div style="font-size:14px">${escapeHtml(e.exemption)}</div><div class="subtle" style="margin-top:6px">${escapeHtml(e.entity)}</div></div>
+      ${badge(e.expiry ? "Expiring" : "Draft")} <span class="subtle">${escapeHtml(e.expiry)}</span>
+    </div>`).join('') || `<div class="card panel"><div class="subtle">No expiring exemptions for current filters.</div></div>`;
+
+  document.getElementById('screen-dashboard').innerHTML = `
+    ${screenShell("Executive Dashboard","Read-only management view showing open items, expiring exemptions, and recent approvals.")}
+    <div class="grid-3">
+      <div class="card">
+        <div class="panel">
+          <h4>Heatmap Snapshot</h4>
+          <div class="muted">High-level regulatory applicability across major FAB entities</div>
+        </div>
+        <div class="table-wrap" style="margin:0 18px 18px">
+          <table>
+            <thead><tr><th>Entity</th>${regimes.slice(0,6).map(r=>`<th style="text-align:center">${r}</th>`).join('')}</tr></thead>
+            <tbody>
+              ${entities.slice(0,6).map(entity => `
+                <tr>
+                  <td>${escapeHtml(entity.name)}</td>
+                  ${regimes.slice(0,6).map(r => `<td style="text-align:center">${badge(heatmap[entity.id][r])}</td>`).join('')}
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="card"><div class="panel"><h4>Open Items</h4></div><div class="stack" style="padding:0 18px 18px">${openCards}</div></div>
+        <div class="card"><div class="panel"><h4>Expiring Exemptions</h4></div><div class="stack" style="padding:0 18px 18px">${expCards}</div></div>
+      </div>
+    </div>`;
+}
+
+function renderHeatmap(){
+  const action = canEdit() ? `<button class="btn" onclick="alert('Prototype only: this would open a change request form.')">Propose Change</button>` : `<span class="badge na">Read only</span>`;
+  const rows = entities.map(entity => `
+    <tr>
+      <td><div class="entity-name">${escapeHtml(entity.name)}</div><div class="entity-sub">${escapeHtml(entity.location)}</div></td>
+      <td>${escapeHtml(entity.type)}</td>
+      <td>${escapeHtml(entity.regulator)}</td>
+      ${regimes.map(r => {
+        const status = heatmap[entity.id][r];
+        return `<td style="text-align:center"><button class="heat-btn" onclick='openHeatmapDetail(${JSON.stringify(entity)}, ${JSON.stringify(r)}, ${JSON.stringify(status)})'>${badge(status)}</button></td>`;
+      }).join('')}
+    </tr>`).join('');
+  document.getElementById('screen-heatmap').innerHTML = `
+    ${screenShell("Entity Heatmap","Core review screen. Click a cell to open the applicability detail page.", action)}
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="min-width:240px">Entity</th><th>Type</th><th>Regulator</th>${regimes.map(r=>`<th style="text-align:center;min-width:118px">${r}</th>`).join('')}</tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function renderDetail(){
+  const editable = canEdit();
+  const action = editable
+    ? `<div class="toolbar"><button class="btn secondary" onclick="alert('Draft saved in prototype only.')">Save Draft</button><button class="btn" onclick="submitDetailApproval()">Submit for Approval</button></div>`
+    : '';
+  const fields = [
+    ["Entity",selectedDetail.entity],["Jurisdiction",selectedDetail.jurisdiction],["Regulator",selectedDetail.regulator],["Regime",selectedDetail.regime],
+    ["Owner",selectedDetail.owner],["Reviewer",selectedDetail.reviewer],["Last Review",selectedDetail.reviewDate],["Next Review",selectedDetail.nextReviewDate]
+  ];
+  document.getElementById('screen-detail').innerHTML = `
+    ${screenShell("Applicability Detail","The governable record behind a heatmap cell. This is where compliance interprets, documents, and submits material changes.", action)}
+    <div class="detail-grid">${fields.map(([k,v]) => `<div class="card kv"><div class="k">${k}</div><div class="v">${escapeHtml(v)}</div></div>`).join('')}</div>
+    <div class="detail-lower" style="margin-top:16px">
+      <div class="card panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><h4>Current Status</h4>${badge(selectedDetail.status)}</div>
+        <div class="label">Rationale</div>
+        ${editable ? `<textarea id="detailRationale">${escapeHtml(selectedDetail.rationale)}</textarea>` : `<div class="text">${escapeHtml(selectedDetail.rationale)}</div>`}
+        <div class="label">Trigger Conditions</div>
+        ${editable ? `<textarea id="detailTrigger">${escapeHtml(selectedDetail.triggerConditions)}</textarea>` : `<div class="text">${escapeHtml(selectedDetail.triggerConditions)}</div>`}
+        <div class="label">Source Reference</div>
+        ${editable ? `<input id="detailSource" value="${escapeHtml(selectedDetail.source)}" style="width:100%">` : `<div class="text">${escapeHtml(selectedDetail.source)}</div>`}
+      </div>
+      <div class="card panel">
+        <h4>Governance</h4>
+        <div class="label">Approval Status</div>${badge(selectedDetail.approvalStatus)}
+        <div class="label">Linked Exemptions</div><div class="text">${escapeHtml(selectedDetail.linkedExemptions)}</div>
+        <div class="label">Linked Decision</div><div class="text">${escapeHtml(selectedDetail.linkedDecision)}</div>
+      </div>
+    </div>`;
+}
+
+function renderFields(){
+  const action = canEdit() ? `<button class="btn" onclick="openFieldModal()">Add Field Mapping</button>` : '';
+  const cards = filteredProducts().map(item => `
+    <div class="card item-card">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+        <div><h4>${escapeHtml(item.product)}</h4><div class="muted">${escapeHtml(item.entity)}</div></div>
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">${badge(item.rule)}${badge(item.reviewStatus)}</div>
+      </div>
+      <div style="margin-top:10px">${escapeHtml(item.regime)}</div>
+      <div class="chips">${item.requiredFields.map(f => `<span class="chip">${escapeHtml(f)}</span>`).join('')}</div>
+      <div class="text" style="margin-top:10px">${escapeHtml(item.rationale)}</div>
+      ${canEdit() ? `<div style="margin-top:12px"><button class="btn secondary" onclick="alert('Prototype only: edit mapping form would open here.')">Edit Mapping</button></div>` : ''}
+    </div>`).join('') || `<div class="card empty-note">No field mappings match the current filters.</div>`;
+  document.getElementById('screen-fields').innerHTML = `
+    ${screenShell("Instrument Field Explorer","Product-level mapping of reporting fields by entity and regime.", action)}
+    <div class="cards">${cards}</div>`;
+}
+
+function renderExemptions(){
+  const action = canEdit() ? `<button class="btn" onclick="openExemptionModal()">Add Exemption</button>` : '';
+  document.getElementById('screen-exemptions').innerHTML = `
+    ${screenShell("Exemptions Tracker","Maintain legal basis, expiry, ownership, and review workflow for exemptions.", action)}
+    <div class="card"><div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Entity</th><th>Regime</th><th>Exemption</th><th>Law Reference</th><th>Owner</th><th>Expiry</th><th>Status</th><th>Approval</th>${canEdit()?'<th>Action</th>':''}
+        </tr></thead>
+        <tbody>
+          ${filteredExemptions().map(item => `
+            <tr>
+              <td>${escapeHtml(item.entity)}</td>
+              <td>${escapeHtml(item.regime)}</td>
+              <td>${escapeHtml(item.exemption)}</td>
+              <td>${escapeHtml(item.lawReference)}</td>
+              <td>${escapeHtml(item.owner)}</td>
+              <td>${escapeHtml(item.expiry)}</td>
+              <td>${badge(item.status)}</td>
+              <td>${badge(item.approvalStatus)}</td>
+              ${canEdit()?`<td><button class="btn secondary" onclick="alert('Prototype only: edit exemption form would open here.')">Edit</button></td>`:''}
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div></div>`;
+}
+
+function renderDecisions(){
+  const action = canEdit() ? `<button class="btn" onclick="openDecisionModal()">Add Decision</button>` : '';
+  const cards = filteredDecisions().map(item => `
+    <div class="card item-card">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+        <div><div class="subtle">${escapeHtml(item.date)}</div><h4 style="font-size:17px;margin-top:8px">${escapeHtml(item.question)}</h4></div>
+        ${badge(item.status)}
+      </div>
+      <div class="muted">${escapeHtml(item.entity)} · ${escapeHtml(item.regime)}</div>
+      <div class="text" style="margin-top:8px"><strong>Owner:</strong> ${escapeHtml(item.owner)}</div>
+      <div class="text"><strong>Outcome:</strong> ${escapeHtml(item.outcome)}</div>
+      <div class="text">${escapeHtml(item.rationale)}</div>
+      ${canEdit()?`<div class="toolbar" style="margin-top:12px"><button class="btn secondary" onclick="alert('Prototype only: edit decision form would open here.')">Edit</button><button class="btn secondary" onclick="alert('Prototype only: link record flow would open here.')">Link Record</button></div>`:''}
+    </div>`).join('') || `<div class="card empty-note">No decisions match the current filters.</div>`;
+  document.getElementById('screen-decisions').innerHTML = `
+    ${screenShell("Decision Log","Preserve interpretation history, rationale, ownership, and closure status.", action)}
+    <div class="grid-2">${cards}</div>`;
+}
+
+function renderApprovals(){
+  const action = canApprove() ? `<span class="badge approved">Approve / Reject enabled</span>` : `<span class="badge na">Read only for this role</span>`;
+  document.getElementById('screen-approvals').innerHTML = `
+    ${screenShell("Pending Approvals","Maker-checker workflow for material changes.", action)}
+    <div class="card"><div class="table-wrap">
+      <table>
+        <thead><tr><th>Item Type</th><th>Submitted By</th><th>Date</th><th>Entity</th><th>Regime</th><th>Summary</th><th>Priority</th><th>Status</th>${canApprove()?'<th>Action</th>':''}</tr></thead>
+        <tbody>
+          ${approvals.map(item => `
+            <tr>
+              <td>${escapeHtml(item.itemType)}</td>
+              <td>${escapeHtml(item.submittedBy)}</td>
+              <td>${escapeHtml(item.submissionDate)}</td>
+              <td>${escapeHtml(item.entity)}</td>
+              <td>${escapeHtml(item.regime)}</td>
+              <td>${escapeHtml(item.summary)}</td>
+              <td>${badge(item.priority)}</td>
+              <td>${badge(item.status)}</td>
+              ${canApprove()?`<td><div class="toolbar"><button class="btn" onclick="approveItem(${item.id})">Approve</button><button class="btn secondary" onclick="rejectItem(${item.id})">Reject</button></div></td>`:''}
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div></div>`;
+}
+
+function renderAdmin(){
+  const action = isAdmin() ? `<button class="btn" onclick="alert('Prototype only: add reference record form would open here.')">Add Reference Record</button>` : `<span class="badge na">Admin only</span>`;
+  document.getElementById('screen-admin').innerHTML = `
+    ${screenShell("Reference Data Admin","Admin-only configuration for entities, regimes, users, roles, and master data.", action)}
+    <div class="small-cards">
+      <div class="card panel"><h4>Entities</h4>${entities.slice(0,6).map(e => `<div style="display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)"><span>${escapeHtml(e.name)}</span>${isAdmin()?`<button class="btn secondary" style="padding:8px 10px" onclick="alert('Prototype only: edit entity form would open here.')">Edit</button>`:''}</div>`).join('')}</div>
+      <div class="card panel"><h4>Users & Roles</h4>${referenceData.users.map(u => `<div style="display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)"><span>${escapeHtml(u.name)}</span>${badge(u.role)}</div>`).join('')}</div>
+      <div class="card panel"><h4>Products</h4>${referenceData.products.map(p => `<div style="display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)"><span>${escapeHtml(p)}</span>${isAdmin()?`<button class="btn secondary" style="padding:8px 10px" onclick="alert('Prototype only: edit product form would open here.')">Edit</button>`:''}</div>`).join('')}</div>
+    </div>`;
+}
+
+function renderUpload(){
+  const action = canEdit() ? `<button class="btn" onclick="alert('Prototype only: file upload would open here.')">Upload Template</button>` : '';
+  document.getElementById('screen-upload').innerHTML = `
+    ${screenShell("Bulk Upload","Controlled Excel-based import for bulk updates. This is support tooling, not the primary operating model.", action)}
+    <div class="small-cards">
+      <div class="card panel"><h4>Templates</h4><div class="text">Download controlled Excel templates for entity-regime mappings, field mappings, or exemptions.</div><div style="margin-top:12px"><button class="btn secondary" onclick="alert('Prototype only: template download would start here.')">Download Template</button></div></div>
+      <div class="card panel"><h4>Validation Rules</h4><div class="text">System checks invalid regimes, missing owners, duplicate rows, and invalid dates before import.</div><div style="margin-top:12px">${badge("12 rows flagged in sample upload")}</div></div>
+      <div class="card panel"><h4>Import Outcome</h4><div class="text">Accepted rows move to draft or approval workflow depending on materiality.</div><div style="margin-top:12px"><button class="btn secondary" onclick="alert('Prototype only: error log modal would open here.')">View Error Log</button></div></div>
+    </div>
+    <div class="dropzone" style="margin-top:16px">
+      <div style="font-size:30px">⬆</div>
+      <h4>Drop Excel template here</h4>
+      <div class="subtle">Recommended only for bulk loads. Day-to-day maintenance should happen through the app screens.</div>
+    </div>`;
+}
+
+function renderScreens(){
+  renderStats();
+  renderNav();
+  renderDashboard();
+  renderHeatmap();
+  renderDetail();
+  renderFields();
+  renderExemptions();
+  renderDecisions();
+  renderApprovals();
+  renderAdmin();
+  renderUpload();
+}
+
+function approveItem(id){
+  approvals = approvals.map(a => a.id===id ? {...a, status:"Approved"} : a);
+  renderScreens();
+}
+function rejectItem(id){
+  approvals = approvals.map(a => a.id===id ? {...a, status:"Rejected"} : a);
+  renderScreens();
+}
+function submitDetailApproval(){
+  const rationaleEl = document.getElementById('detailRationale');
+  const triggerEl = document.getElementById('detailTrigger');
+  const sourceEl = document.getElementById('detailSource');
+  if(rationaleEl) selectedDetail.rationale = rationaleEl.value;
+  if(triggerEl) selectedDetail.triggerConditions = triggerEl.value;
+  if(sourceEl) selectedDetail.source = sourceEl.value;
+  approvals.unshift({
+    id: Date.now(),
+    itemType: "Applicability Change",
+    submittedBy: currentRole,
+    submissionDate: new Date().toISOString().slice(0,10),
+    entity: selectedDetail.entity,
+    regime: selectedDetail.regime,
+    summary: "Updated rationale / trigger conditions / source reference.",
+    priority: "High",
+    status: "Pending"
+  });
+  alert("Submitted for approval in this prototype.");
+  renderScreens();
+  setScreen("approvals");
+}
+
+function showModal(title, bodyHtml, onSave){
+  const backdrop = document.getElementById('modalBackdrop');
+  const box = document.getElementById('modalBox');
+  box.innerHTML = `<h3>${title}</h3>${bodyHtml}<div class="footer-actions"><button class="btn secondary" onclick="closeModal()">Cancel</button><button class="btn" id="modalSave">Save</button></div>`;
+  backdrop.classList.add('show');
+  document.getElementById('modalSave').onclick = onSave;
+}
+function closeModal(){ document.getElementById('modalBackdrop').classList.remove('show'); }
+document.getElementById('modalBackdrop').addEventListener('click', e => { if(e.target.id==='modalBackdrop') closeModal(); });
+
+function openExemptionModal(){
+  showModal("Add Exemption", `
+    <div class="form-grid">
+      <input id="exEntity" placeholder="Entity" class="full">
+      <input id="exRegime" placeholder="Regime">
+      <input id="exName" placeholder="Exemption">
+      <input id="exLaw" placeholder="Law Reference">
+      <input id="exOwner" placeholder="Owner">
+      <input id="exExpiry" type="date">
+      <textarea id="exNotes" placeholder="Notes" class="full"></textarea>
+    </div>`, () => {
+      const entity = document.getElementById('exEntity').value.trim();
+      const regime = document.getElementById('exRegime').value.trim();
+      const exemption = document.getElementById('exName').value.trim();
+      if(!entity || !regime || !exemption){ alert("Please fill Entity, Regime, and Exemption."); return; }
+      exemptions.unshift({
+        id: Date.now(), entity, regime, exemption,
+        lawReference: document.getElementById('exLaw').value.trim(),
+        owner: document.getElementById('exOwner').value.trim() || currentRole,
+        expiry: document.getElementById('exExpiry').value,
+        status: "Active",
+        notes: document.getElementById('exNotes').value.trim(),
+        approvalStatus: "Draft"
+      });
+      approvals.unshift({
+        id: Date.now()+1, itemType:"New Exemption", submittedBy: currentRole, submissionDate: new Date().toISOString().slice(0,10),
+        entity, regime, summary:`New exemption: ${exemption}`, priority:"Medium", status:"Pending"
+      });
+      closeModal(); renderScreens(); setScreen('exemptions');
+    });
+}
+function openDecisionModal(){
+  showModal("Add Decision", `
+    <div class="form-grid">
+      <input id="dcDate" type="date">
+      <input id="dcOwner" placeholder="Owner">
+      <input id="dcEntity" placeholder="Entity">
+      <input id="dcRegime" placeholder="Regime">
+      <textarea id="dcQuestion" placeholder="Decision question" class="full"></textarea>
+      <textarea id="dcRationale" placeholder="Rationale" class="full"></textarea>
+    </div>`, () => {
+      const entity = document.getElementById('dcEntity').value.trim();
+      const regime = document.getElementById('dcRegime').value.trim();
+      const question = document.getElementById('dcQuestion').value.trim();
+      if(!entity || !regime || !question){ alert("Please fill Entity, Regime, and Decision question."); return; }
+      decisions.unshift({
+        id: Date.now(),
+        date: document.getElementById('dcDate').value || new Date().toISOString().slice(0,10),
+        entity, regime, question,
+        outcome:"Open",
+        owner: document.getElementById('dcOwner').value.trim() || currentRole,
+        rationale: document.getElementById('dcRationale').value.trim(),
+        status:"Open"
+      });
+      closeModal(); renderScreens(); setScreen('decisions');
+    });
+}
+function openFieldModal(){
+  showModal("Add Field Mapping", `
+    <div class="form-grid">
+      <input id="fmProduct" placeholder="Product">
+      <input id="fmEntity" placeholder="Entity">
+      <input id="fmRegime" placeholder="Regime">
+      <input id="fmRule" placeholder="Rule (Applicable / Conditional)" value="Conditional">
+      <textarea id="fmFields" placeholder="Required fields, comma separated" class="full"></textarea>
+      <textarea id="fmRationale" placeholder="Rationale" class="full"></textarea>
+    </div>`, () => {
+      const product = document.getElementById('fmProduct').value.trim();
+      const entity = document.getElementById('fmEntity').value.trim();
+      const regime = document.getElementById('fmRegime').value.trim();
+      if(!product || !entity || !regime){ alert("Please fill Product, Entity, and Regime."); return; }
+      products.unshift({
+        id: Date.now(), product, entity, regime,
+        rule: document.getElementById('fmRule').value.trim() || "Conditional",
+        requiredFields: document.getElementById('fmFields').value.split(',').map(x=>x.trim()).filter(Boolean),
+        rationale: document.getElementById('fmRationale').value.trim(),
+        reviewStatus:"Draft"
+      });
+      approvals.unshift({
+        id: Date.now()+1, itemType:"Field Mapping Change", submittedBy: currentRole, submissionDate:new Date().toISOString().slice(0,10),
+        entity, regime, summary:`Added field mapping for ${product}.`, priority:"Medium", status:"Pending"
+      });
+      closeModal(); renderScreens(); setScreen('fields');
+    });
+}
+
+function initFilters(){
+  document.getElementById('entityFilter').innerHTML = `<option value="all">All entities</option>` + entities.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
+  document.getElementById('regimeFilter').innerHTML = `<option value="all">All regimes</option>` + regimes.map(r => `<option value="${r}">${r}</option>`).join('');
+}
+
+document.getElementById('roleSelect').addEventListener('change', e => setRole(e.target.value));
+document.getElementById('searchInput').addEventListener('input', renderScreens);
+document.getElementById('entityFilter').addEventListener('change', renderScreens);
+document.getElementById('regimeFilter').addEventListener('change', renderScreens);
+
+initFilters();
+renderScreens();
+setScreen('dashboard');
+</script>
+</body>
+</html>
